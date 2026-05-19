@@ -6,7 +6,7 @@ const env = require("dotenv");
 const cors = require("cors");
 
 const port = process.env.PORT || 8000;
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = process.env.MONGODB_URI;
 
 app.use(cors());
@@ -26,13 +26,42 @@ app.get("/", (req, res) => {
 
 async function run() {
   try {
+    // deploy er time e etakle comment  kore  dite hobe
     await client.connect();
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!",
-    );
+    const db = client.db("studynook");
+    const roomsCollection = db.collection("rooms");
+
+    // create room
+    app.post("/rooms", async (req, res) => {
+      const roomData = req.body;
+      const result = await roomsCollection.insertOne(roomData);
+      res.send(result);
+    });
+
+    // all rooms
+    app.get("/rooms", async (req, res) => {
+      const result = await roomsCollection.find().toArray();
+      res.send(result);
+    });
+
+    // single room
+    app.get("/rooms/:roomId", async (req, res) => {
+      const { roomId } = req.params;
+      const query = { _id: new ObjectId(roomId) };
+      const result = await roomsCollection.findOne(query);
+      res.send(result);
+    });
+
+    // latest rooms for home page
+    app.get("/rooms/latest", async (req, res) => {
+      const result = await roomsCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .toArray();
+      res.send(result);
+    });
   } finally {
-    // Ensures that the client will close when you finish/error
     // await client.close();
   }
 }
