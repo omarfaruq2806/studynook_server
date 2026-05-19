@@ -2,7 +2,6 @@ const express = require("express");
 const app = express();
 
 require("dotenv").config();
-const env = require("dotenv");
 const cors = require("cors");
 
 const port = process.env.PORT || 8000;
@@ -44,14 +43,6 @@ async function run() {
       res.send(result);
     });
 
-    // single room
-    app.get("/rooms/:roomId", async (req, res) => {
-      const { roomId } = req.params;
-      const query = { _id: new ObjectId(roomId) };
-      const result = await roomsCollection.findOne(query);
-      res.send(result);
-    });
-
     // latest rooms for home page
     app.get("/rooms/latest", async (req, res) => {
       const result = await roomsCollection
@@ -59,6 +50,14 @@ async function run() {
         .sort({ createdAt: -1 })
         .limit(6)
         .toArray();
+      res.send(result);
+    });
+
+    // single room
+    app.get("/rooms/:roomId", async (req, res) => {
+      const { roomId } = req.params;
+      const query = { _id: new ObjectId(roomId) };
+      const result = await roomsCollection.findOne(query);
       res.send(result);
     });
   } finally {
