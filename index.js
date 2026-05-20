@@ -30,7 +30,7 @@ async function run() {
     const db = client.db("studynook");
     const roomsCollection = db.collection("rooms");
 
-    // create room
+    // create room / add room
     app.post("/rooms", async (req, res) => {
       const roomData = req.body;
       const result = await roomsCollection.insertOne(roomData);
@@ -53,11 +53,28 @@ async function run() {
       res.send(result);
     });
 
-    // single room
+    // single room / details room
     app.get("/rooms/:roomId", async (req, res) => {
       const { roomId } = req.params;
       const query = { _id: new ObjectId(roomId) };
       const result = await roomsCollection.findOne(query);
+      res.send(result);
+    });
+
+    // for updating and editing room data
+    app.patch("/rooms/:roomId", async (req, res) => {
+      const { roomId } = req.params;
+      const roomData = req.body;
+      const query = { _id: new ObjectId(roomId) };
+      const result = await roomsCollection.updateOne(query, { $set: roomData });
+      res.send(result);
+    });
+
+    // for delete room
+    app.delete("/rooms/:roomId", async (req, res) => {
+      const { roomId } = req.params;
+      const query = { _id: new ObjectId(roomId) };
+      const result = await roomsCollection.deleteOne(query);
       res.send(result);
     });
   } finally {
