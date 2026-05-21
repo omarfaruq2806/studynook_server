@@ -29,6 +29,7 @@ async function run() {
     await client.connect();
     const db = client.db("studynook");
     const roomsCollection = db.collection("rooms");
+    const bookingCollection = db.collection("bookings");
 
     // create room / add room
     app.post("/rooms", async (req, res) => {
@@ -66,6 +67,7 @@ async function run() {
       const { roomId } = req.params;
       const roomData = req.body;
       const query = { _id: new ObjectId(roomId) };
+      console.log(query);
       const result = await roomsCollection.updateOne(query, { $set: roomData });
       res.send(result);
     });
@@ -75,6 +77,69 @@ async function run() {
       const { roomId } = req.params;
       const query = { _id: new ObjectId(roomId) };
       const result = await roomsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // get all rooms for a user , that he added
+    app.get("/myListings/:userId", async (req, res) => {
+      const { userId } = req.params;
+      const query = { "creator.id": userId };
+      const result = await roomsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // handle booking data
+    app.post("/bookings", async (req, res) => {
+      const booking = req.body;
+      const conflict = await bookingCollection.findOne({
+        roomId: booking.roomId,
+        date: booking.date,
+        status: "confirmed",
+        startTime: { $lt: booking.endTime },
+        endTime: { $gt: booking.startTime },
+      });
+      if (conflict) {
+        return res.send({
+          conflict: true,
+          message: "This room is already booked for this time slot !!",
+        });
+      }
+      await roomsCollection.updateOne(
+        {
+          _id: new ObjectId(booking.roomId),
+        },
+        {
+          $inc: { total: 1 },
+        },
+      );
+      const result = await bookingCollection.insertOne(booking);
+      res.send(result);
+    });
+
+    // get all bookings info for a user
+    app.get("/bookings/:userId", async (req, res) => {
+      const { userId } = req.params;
+      const query = { "user.id": userId };
+      const result = await bookingCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // for cancelling booking and update total in rooms collection
+    app.patch("/bookings/:bookingId", async (req, res) => {
+      const { bookingId } = req.params;
+      const bookingData = req.body;
+      const query = { _id: new ObjectId(bookingId) };
+      await roomsCollection.updateOne(
+        {
+          _id: new ObjectId(bookingData.roomId),
+        },
+        {
+          $inc: { total: -1 },
+        },
+      );
+      const result = await bookingCollection.updateOne(query, {
+        $set: { status: "cancelled" },
+      });
       res.send(result);
     });
   } finally {
