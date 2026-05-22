@@ -92,7 +92,11 @@ async function run() {
 
     // get all rooms for a user , that he added
     app.get("/myListings/:userId", async (req, res) => {
+      // const {token} = req.headers.authorization
+      const header = req.headers.authorization;
+      const token = header.split(" ")[1];
       const { userId } = req.params;
+      console.log(token);
       const query = { "creator.id": userId };
       const result = await roomsCollection.find(query).toArray();
       res.send(result);
