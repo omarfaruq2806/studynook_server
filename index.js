@@ -40,6 +40,16 @@ async function run() {
 
     // all rooms
     app.get("/rooms", async (req, res) => {
+      const { search } = req.query;
+      console.log(req.query, search);
+      let cursor;
+      if (search) {
+        cursor = await roomsCollection
+          .find({ name: { $regex: search, $options: "i" } })
+          .toArray();
+        res.send(cursor);
+        return;
+      }
       const result = await roomsCollection.find().toArray();
       res.send(result);
     });
@@ -128,7 +138,6 @@ async function run() {
     app.patch("/bookings/:bookingId", async (req, res) => {
       const { bookingId } = req.params;
       const bookingData = req.body;
-      console.log(bookingData);
       const query = { _id: new ObjectId(bookingId) };
       await roomsCollection.updateOne(
         {
@@ -143,8 +152,6 @@ async function run() {
       });
       res.send(result);
     });
-
-
   } finally {
     // await client.close();
   }
