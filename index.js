@@ -93,7 +93,7 @@ async function run() {
       const booking = req.body;
       const conflict = await bookingCollection.findOne({
         roomId: booking.roomId,
-        date: booking.date,
+        bookingDate: booking.bookingDate,
         status: "confirmed",
         startTime: { $lt: booking.endTime },
         endTime: { $gt: booking.startTime },
