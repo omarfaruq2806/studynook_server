@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-
+const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 require("dotenv").config();
 const cors = require("cors");
 
@@ -23,6 +23,25 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
+const JWKS = createRemoteJWKSet(new URL("http://localhost:3000/api/auth/jwks"));
+
+const verifyToken = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  const token = authHeader.split(" ")[1];
+  if (!token) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  try {
+    const { payload } = await jwtVerify(token, JWKS);
+    next();
+  } catch (error) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+};
+
 async function run() {
   try {
     // deploy er time e etakle comment  kore  dite hobe
@@ -32,7 +51,7 @@ async function run() {
     const bookingCollection = db.collection("bookings");
 
     // create room / add room
-    app.post("/rooms", async (req, res) => {
+    app.post("/rooms", verifyToken, async (req, res) => {
       const roomData = req.body;
       const result = await roomsCollection.insertOne(roomData);
       res.send(result);
@@ -73,7 +92,7 @@ async function run() {
     });
 
     // for updating and editing room data
-    app.patch("/rooms/:roomId", async (req, res) => {
+    app.patch("/rooms/:roomId", verifyToken, async (req, res) => {
       const { roomId } = req.params;
       const roomData = req.body;
       const query = { _id: new ObjectId(roomId) };
@@ -83,7 +102,7 @@ async function run() {
     });
 
     // for delete room
-    app.delete("/rooms/:roomId", async (req, res) => {
+    app.delete("/rooms/:roomId", verifyToken, async (req, res) => {
       const { roomId } = req.params;
       const query = { _id: new ObjectId(roomId) };
       const result = await roomsCollection.deleteOne(query);
@@ -91,19 +110,15 @@ async function run() {
     });
 
     // get all rooms for a user , that he added
-    app.get("/myListings/:userId", async (req, res) => {
-      // const {token} = req.headers.authorization
-      const header = req.headers.authorization;
-      const token = header.split(" ")[1];
+    app.get("/myListings/:userId", varifyToken, async (req, res) => {
       const { userId } = req.params;
-      console.log(token);
       const query = { "creator.id": userId };
       const result = await roomsCollection.find(query).toArray();
       res.send(result);
     });
 
     // handle booking data
-    app.post("/bookings", async (req, res) => {
+    app.post("/bookings", verifyToken, async (req, res) => {
       const booking = req.body;
       const conflict = await bookingCollection.findOne({
         roomId: booking.roomId,
@@ -131,7 +146,7 @@ async function run() {
     });
 
     // get all bookings info for a user
-    app.get("/bookings/:userId", async (req, res) => {
+    app.get("/bookings/:userId", verifyToken, async (req, res) => {
       const { userId } = req.params;
       const query = { "user.id": userId };
       const result = await bookingCollection.find(query).toArray();
@@ -139,7 +154,7 @@ async function run() {
     });
 
     // for cancelling booking and update total in rooms collection
-    app.patch("/bookings/:bookingId", async (req, res) => {
+    app.patch("/bookings/:bookingId", verifyToken, async (req, res) => {
       const { bookingId } = req.params;
       const bookingData = req.body;
       const query = { _id: new ObjectId(bookingId) };
