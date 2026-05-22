@@ -128,6 +128,7 @@ async function run() {
     app.patch("/bookings/:bookingId", async (req, res) => {
       const { bookingId } = req.params;
       const bookingData = req.body;
+      console.log(bookingData);
       const query = { _id: new ObjectId(bookingId) };
       await roomsCollection.updateOne(
         {
@@ -142,6 +143,8 @@ async function run() {
       });
       res.send(result);
     });
+
+
   } finally {
     // await client.close();
   }
