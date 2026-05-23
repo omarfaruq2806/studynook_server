@@ -59,12 +59,24 @@ async function run() {
 
     // all rooms
     app.get("/rooms", async (req, res) => {
-      const { search } = req.query;
-      console.log(req.query, search);
+      const { search, amenities } = req.query;
+      console.log(req.query);
       let cursor;
       if (search) {
         cursor = await roomsCollection
           .find({ name: { $regex: search, $options: "i" } })
+          .toArray();
+        res.send(cursor);
+        return;
+      }
+      if (amenities) {
+        cursor = await roomsCollection
+          .find({
+            amenities: {
+              $regex: amenities,
+              $options: "i",
+            },
+          })
           .toArray();
         res.send(cursor);
         return;
@@ -118,32 +130,36 @@ async function run() {
     });
 
     // handle booking data
-    app.post("/bookings", verifyToken, async (req, res) => {
-      const booking = req.body;
-      const conflict = await bookingCollection.findOne({
-        roomId: booking.roomId,
-        bookingDate: booking.bookingDate,
-        status: "confirmed",
-        startTime: { $lt: booking.endTime },
-        endTime: { $gt: booking.startTime },
-      });
-      if (conflict) {
-        return res.send({
-          conflict: true,
-          message: "This room is already booked for this time slot !!",
+    app.post(
+      "/bookings",
+      //  verifyToken,
+      async (req, res) => {
+        const booking = req.body;
+        const conflict = await bookingCollection.findOne({
+          roomId: booking.roomId,
+          bookingDate: booking.bookingDate,
+          status: "confirmed",
+          startTime: { $lt: booking.endTime },
+          endTime: { $gt: booking.startTime },
         });
-      }
-      await roomsCollection.updateOne(
-        {
-          _id: new ObjectId(booking.roomId),
-        },
-        {
-          $inc: { total: 1 },
-        },
-      );
-      const result = await bookingCollection.insertOne(booking);
-      res.send(result);
-    });
+        if (conflict) {
+          return res.send({
+            conflict: true,
+            message: "This room is already booked for this time slot !!",
+          });
+        }
+        await roomsCollection.updateOne(
+          {
+            _id: new ObjectId(booking.roomId),
+          },
+          {
+            $inc: { total: 1 },
+          },
+        );
+        const result = await bookingCollection.insertOne(booking);
+        res.send(result);
+      },
+    );
 
     // get all bookings info for a user
     app.get("/bookings/:userId", verifyToken, async (req, res) => {
