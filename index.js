@@ -72,12 +72,18 @@ async function run() {
       if (amenities) {
         cursor = await roomsCollection
           .find({
-            amenities: {
-              $regex: amenities,
-              $options: "i",
-            },
+            $or: [
+              { amenities: "WiFi" },
+              { amenities: "Projector" },
+              { amenities: "whiteboard" },
+              { amenities: "Power Outlets" },
+              { amenities: "Quiet Zone" },
+              { amenities: "Air Conditioning" },
+              { amenities: "Projector" },
+            ],
           })
           .toArray();
+
         res.send(cursor);
         return;
       }
@@ -122,7 +128,7 @@ async function run() {
     });
 
     // get all rooms for a user , that he added
-    app.get("/myListings/:userId", varifyToken, async (req, res) => {
+    app.get("/myListings/:userId", verifyToken, async (req, res) => {
       const { userId } = req.params;
       const query = { "creator.id": userId };
       const result = await roomsCollection.find(query).toArray();
@@ -130,36 +136,32 @@ async function run() {
     });
 
     // handle booking data
-    app.post(
-      "/bookings",
-      //  verifyToken,
-      async (req, res) => {
-        const booking = req.body;
-        const conflict = await bookingCollection.findOne({
-          roomId: booking.roomId,
-          bookingDate: booking.bookingDate,
-          status: "confirmed",
-          startTime: { $lt: booking.endTime },
-          endTime: { $gt: booking.startTime },
+    app.post("/bookings", verifyToken, async (req, res) => {
+      const booking = req.body;
+      const conflict = await bookingCollection.findOne({
+        roomId: booking.roomId,
+        bookingDate: booking.bookingDate,
+        status: "confirmed",
+        startTime: { $lt: booking.endTime },
+        endTime: { $gt: booking.startTime },
+      });
+      if (conflict) {
+        return res.send({
+          conflict: true,
+          message: "This room is already booked for this time slot !!",
         });
-        if (conflict) {
-          return res.send({
-            conflict: true,
-            message: "This room is already booked for this time slot !!",
-          });
-        }
-        await roomsCollection.updateOne(
-          {
-            _id: new ObjectId(booking.roomId),
-          },
-          {
-            $inc: { total: 1 },
-          },
-        );
-        const result = await bookingCollection.insertOne(booking);
-        res.send(result);
-      },
-    );
+      }
+      await roomsCollection.updateOne(
+        {
+          _id: new ObjectId(booking.roomId),
+        },
+        {
+          $inc: { total: 1 },
+        },
+      );
+      const result = await bookingCollection.insertOne(booking);
+      res.send(result);
+    });
 
     // get all bookings info for a user
     app.get("/bookings/:userId", verifyToken, async (req, res) => {
