@@ -4,7 +4,7 @@ const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 require("dotenv").config();
 const cors = require("cors");
 
-const port = process.env.PORT || 8000;
+const port = process.env.PORT;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = process.env.MONGODB_URI;
 
