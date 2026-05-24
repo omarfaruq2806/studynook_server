@@ -12,7 +12,12 @@ const app = express();
 const port = process.env.PORT;
 const uri = process.env.MONGODB_URI;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "https://your-frontend-domain.com"],
+    credentials: true,
+  }),
+);
 app.use(express.json());
 
 const client = new MongoClient(uri, {
