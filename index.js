@@ -14,7 +14,7 @@ const uri = process.env.MONGODB_URI;
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://your-frontend-domain.com"],
+    origin: ["http://localhost:3000", "https://studynook-three.vercel.app"],
     credentials: true,
   }),
 );
