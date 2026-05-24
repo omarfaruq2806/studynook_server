@@ -23,8 +23,6 @@ const client = new MongoClient(uri, {
   },
 });
 
-
-
 // const JWKS = createRemoteJWKSet(
 //   new URL(`${process.env.CLIENT_URL}/api/auth/jwks`),
 // );
@@ -62,7 +60,7 @@ async function run() {
     // create room / add room
     app.post("/rooms", verifyToken, async (req, res) => {
       const roomData = req.body;
-      console.log(roomData ,"room data ");
+      console.log(roomData, "room data ");
       const result = await roomsCollection.insertOne(roomData);
       res.send(result);
     });
