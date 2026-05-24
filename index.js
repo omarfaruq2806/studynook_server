@@ -1,11 +1,15 @@
 const express = require("express");
-const app = express();
+
+const { verify } = require("node:crypto");
+
 const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 require("dotenv").config();
 const cors = require("cors");
 
-const port = process.env.PORT;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const app = express();
+
+const port = process.env.PORT;
 const uri = process.env.MONGODB_URI;
 
 app.use(cors());
@@ -19,12 +23,14 @@ const client = new MongoClient(uri, {
   },
 });
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+
+
+// const JWKS = createRemoteJWKSet(
+//   new URL(`${process.env.CLIENT_URL}/api/auth/jwks`),
+// );
 
 const JWKS = createRemoteJWKSet(
-  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`),
+  new URL(process.env.CLIENT_URL + "/api/auth/jwks"),
 );
 
 const verifyToken = async (req, res, next) => {
@@ -33,6 +39,7 @@ const verifyToken = async (req, res, next) => {
     return res.status(401).send({ message: "unauthorized access" });
   }
   const token = authHeader.split(" ")[1];
+  console.log(token);
   if (!token) {
     return res.status(401).send({ message: "unauthorized access" });
   }
@@ -55,6 +62,7 @@ async function run() {
     // create room / add room
     app.post("/rooms", verifyToken, async (req, res) => {
       const roomData = req.body;
+      console.log(roomData ,"room data ");
       const result = await roomsCollection.insertOne(roomData);
       res.send(result);
     });
@@ -130,16 +138,12 @@ async function run() {
     });
 
     // get all rooms for a user , that he added
-    app.get(
-      "/myListings/:userId",
-       verifyToken,
-      async (req, res) => {
-        const { userId } = req.params;
-        const query = { "creator.id": userId };
-        const result = await roomsCollection.find(query).toArray();
-        res.send(result);
-      },
-    );
+    app.get("/myListings/:userId", verifyToken, async (req, res) => {
+      const { userId } = req.params;
+      const query = { "creator.id": userId };
+      const result = await roomsCollection.find(query).toArray();
+      res.send(result);
+    });
 
     // handle booking data
     app.post("/bookings", verifyToken, async (req, res) => {
@@ -200,6 +204,10 @@ async function run() {
   }
 }
 run().catch(console.dir);
+
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
 
 app.listen(port, () => {
   console.log("Server is running on port 8000");
