@@ -23,7 +23,9 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-const JWKS = createRemoteJWKSet(new URL("http://localhost:3000/api/auth/jwks"));
+const JWKS = createRemoteJWKSet(
+  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`),
+);
 
 const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -45,7 +47,7 @@ const verifyToken = async (req, res, next) => {
 async function run() {
   try {
     // deploy er time e etakle comment  kore  dite hobe
-    await client.connect();
+    // await client.connect();
     const db = client.db("studynook");
     const roomsCollection = db.collection("rooms");
     const bookingCollection = db.collection("bookings");
