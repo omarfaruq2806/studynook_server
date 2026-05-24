@@ -18,6 +18,7 @@ app.use(
     credentials: true,
   }),
 );
+
 app.use(express.json());
 
 const client = new MongoClient(uri, {
@@ -32,14 +33,14 @@ const client = new MongoClient(uri, {
 //   new URL(`${process.env.CLIENT_URL}/api/auth/jwks`),
 // );
 
-// const JWKS = createRemoteJWKSet(
-//   new URL(process.env.CLIENT_URL + "/api/auth/jwks"),
-// );
+const JWKS = createRemoteJWKSet(
+  new URL(process.env.CLIENT_URL + "/api/auth/jwks"),
+);
 
-const { payload } = await jwtVerify(token, JWKS, {
-  issuer: process.env.CLIENT_URL,
-  audience: process.env.CLIENT_URL,
-});
+// const { payload } = await jwtVerify(token, JWKS, {
+//   issuer: process.env.CLIENT_URL,
+//   audience: process.env.CLIENT_URL,
+// });
 
 const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
