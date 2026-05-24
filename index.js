@@ -130,12 +130,16 @@ async function run() {
     });
 
     // get all rooms for a user , that he added
-    app.get("/myListings/:userId", verifyToken, async (req, res) => {
-      const { userId } = req.params;
-      const query = { "creator.id": userId };
-      const result = await roomsCollection.find(query).toArray();
-      res.send(result);
-    });
+    app.get(
+      "/myListings/:userId",
+       verifyToken,
+      async (req, res) => {
+        const { userId } = req.params;
+        const query = { "creator.id": userId };
+        const result = await roomsCollection.find(query).toArray();
+        res.send(result);
+      },
+    );
 
     // handle booking data
     app.post("/bookings", verifyToken, async (req, res) => {
